@@ -65,6 +65,7 @@ class SentimentResponse(BaseModel):
     polarity: float
     subjectivity: float
     sentiment: str
+    model: Optional[str] = Field("local", description="Le modèle utilisé pour l'analyse (local ou nom du modèle OpenAI)")
 
 
 class BatchSentimentRequest(BaseModel):

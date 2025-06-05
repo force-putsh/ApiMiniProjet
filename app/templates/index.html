@@ -40,11 +40,10 @@
         }
     </style>
 </head>
-<body>
-    <div class="container">
+<body>    <div class="container">
         <div class="header text-center">
             <h1>API d'Analyse de Sentiments</h1>
-            <p class="lead">Analyse les sentiments dans les textes en utilisant TextBlob et NLTK</p>
+            <p class="lead">Analyse les sentiments dans les textes en utilisant TextBlob, NLTK et OpenAI</p>
         </div>
 
         <div class="row">
@@ -52,12 +51,15 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Analyse en Temps Réel</h3>
-                    </div>
-                    <div class="card-body">
+                    </div>                    <div class="card-body">
                         <form id="sentiment-form">
                             <div class="mb-3">
                                 <label for="text-input" class="form-label">Texte à analyser :</label>
                                 <textarea class="form-control" id="text-input" rows="5" placeholder="Entrez votre texte ici..."></textarea>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="use-openai">
+                                <label class="form-check-label" for="use-openai">Utiliser l'IA avancée (OpenAI)</label>
                             </div>
                             <button type="submit" class="btn btn-primary">Analyser</button>
                         </form>
@@ -81,11 +83,11 @@
                     <div class="card-header">
                         <h3>Documentation de l'API</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="api-section">
+                    <div class="card-body">                        <div class="api-section">
                             <h4>Analyse de Sentiment Simple</h4>
                             <p>Endpoint: <code>/api/analyze</code></p>
                             <p>Méthode: <code>POST</code></p>
+                            <p>Options: <code>?use_openai=true</code> (utilise l'API OpenAI)</p>
                             <p>Exemple de requête:</p>
                             <pre>{
   "text": "Je suis très content de cette application !"
@@ -96,6 +98,7 @@
                             <h4>Analyse de Sentiment par Lot</h4>
                             <p>Endpoint: <code>/api/analyze/batch</code></p>
                             <p>Méthode: <code>POST</code></p>
+                            <p>Options: <code>?use_openai=true</code> (utilise l'API OpenAI)</p>
                             <p>Exemple de requête:</p>
                             <pre>{
   "texts": [
@@ -125,9 +128,7 @@
             const sentimentForm = document.getElementById('sentiment-form');
             const textInput = document.getElementById('text-input');
             const resultCard = document.getElementById('result-card');
-            const resultContainer = document.getElementById('result-container');
-
-            sentimentForm.addEventListener('submit', async function(e) {
+            const resultContainer = document.getElementById('result-container');            sentimentForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const text = textInput.value.trim();
@@ -136,13 +137,19 @@
                     return;
                 }
                 
+                // Vérifier si l'utilisateur souhaite utiliser OpenAI
+                const useOpenAI = document.getElementById('use-openai').checked;
+                
                 try {
                     // Afficher un indicateur de chargement
                     resultContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>Analyse en cours...</p></div>';
                     resultCard.style.display = 'block';
                     
+                    // Construire l'URL avec le paramètre OpenAI si nécessaire
+                    const url = useOpenAI ? '/api/analyze?use_openai=true' : '/api/analyze';
+                    
                     // Envoyer la requête à l'API
-                    const response = await fetch('/api/analyze', {
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -153,8 +160,16 @@
                     if (!response.ok) {
                         throw new Error('Erreur lors de l\'analyse');
                     }
+                      const data = await response.json();
                     
-                    const data = await response.json();
+                    // Affichage de données pour le débogage
+                    console.log("Données reçues:", data);
+                    console.log("Polarité (type):", typeof data.polarity, data.polarity);
+                    console.log("Subjectivité (type):", typeof data.subjectivity, data.subjectivity);
+                    
+                    // Conversion explicite des chaînes en nombres si nécessaire
+                    const polarity = typeof data.polarity === 'string' ? parseFloat(data.polarity.replace(',', '.')) : data.polarity;
+                    const subjectivity = typeof data.subjectivity === 'string' ? parseFloat(data.subjectivity.replace(',', '.')) : data.subjectivity;
                     
                     // Déterminer la classe de couleur pour le sentiment
                     let sentimentClass = 'text-primary';
@@ -168,15 +183,15 @@
                     resultContainer.innerHTML = `
                         <div class="mb-3">
                             <h5>Sentiment : <span class="${sentimentClass}">${data.sentiment}</span></h5>
+                            ${data.model ? `<p class="text-muted">Analysé avec : ${data.model}</p>` : ''}
                         </div>
                         <div class="mb-3">
                             <div class="row">
                                 <div class="col">
-                                    <p class="mb-1">Polarité :</p>
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: ${(data.polarity + 1) * 50}%;" 
-                                             aria-valuenow="${data.polarity}" aria-valuemin="-1" aria-valuemax="1">
-                                            ${data.polarity.toFixed(2)}
+                                    <p class="mb-1">Polarité :</p>                            <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: ${(polarity + 1) * 50}%;" 
+                                             aria-valuenow="${polarity}" aria-valuemin="-1" aria-valuemax="1">
+                                            ${polarity.toFixed(2)}
                                         </div>
                                     </div>
                                 </div>
@@ -185,11 +200,10 @@
                         <div>
                             <div class="row">
                                 <div class="col">
-                                    <p class="mb-1">Subjectivité :</p>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-info" role="progressbar" style="width: ${data.subjectivity * 100}%;" 
-                                             aria-valuenow="${data.subjectivity}" aria-valuemin="0" aria-valuemax="1">
-                                            ${data.subjectivity.toFixed(2)}
+                                    <p class="mb-1">Subjectivité :</p>                            <div class="progress">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: ${subjectivity * 100}%;" 
+                                             aria-valuenow="${subjectivity}" aria-valuemin="0" aria-valuemax="1">
+                                            ${subjectivity.toFixed(2)}
                                         </div>
                                     </div>
                                 </div>

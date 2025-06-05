@@ -9,23 +9,24 @@ from app.models.schemas import (
     BatchSentimentRequest, BatchSentimentResponse
 )
 from app.services.repositories import TextDataRepository, SentimentAnalysisRepository
-from app.services.sentiment_analyzer import SentimentAnalyzer
+from app.services.sentiment_analyzer_new import SentimentAnalyzer
 
 router = APIRouter()
 sentiment_analyzer = SentimentAnalyzer()
 
 
 @router.post("/analyze", response_model=SentimentResponse)
-def analyze_sentiment(request: SentimentRequest, db: Session = Depends(get_db)):
+def analyze_sentiment(request: SentimentRequest, use_openai: bool = False, db: Session = Depends(get_db)):
     """
     Analyse le sentiment d'un texte fourni.
     
     - **text**: Le texte à analyser
+    - **use_openai**: (Optionnel) Utiliser l'API OpenAI pour l'analyse (défaut: False)
     
     Renvoie les résultats de l'analyse de sentiment incluant la polarité et la subjectivité.
     """
     # Analyser le sentiment
-    sentiment_result = sentiment_analyzer.analyze_sentiment(request.text)
+    sentiment_result = sentiment_analyzer.analyze_sentiment(request.text, use_openai=use_openai)
     
     # Enregistrer le texte dans la base de données
     text_data = TextDataRepository.create(db, TextDataCreate(text=request.text))
@@ -35,18 +36,20 @@ def analyze_sentiment(request: SentimentRequest, db: Session = Depends(get_db)):
         text=request.text,
         polarity=sentiment_result["polarity"],
         subjectivity=sentiment_result["subjectivity"],
-        sentiment=sentiment_result["sentiment"]
+        sentiment=sentiment_result["sentiment"],
+        model=sentiment_result.get("model", "local")
     )
     
     return response
 
 
 @router.post("/analyze/batch", response_model=BatchSentimentResponse)
-def analyze_sentiment_batch(request: BatchSentimentRequest, db: Session = Depends(get_db)):
+def analyze_sentiment_batch(request: BatchSentimentRequest, use_openai: bool = False, db: Session = Depends(get_db)):
     """
     Analyse le sentiment d'un lot de textes.
     
     - **texts**: Liste de textes à analyser
+    - **use_openai**: (Optionnel) Utiliser l'API OpenAI pour l'analyse (défaut: False)
     
     Renvoie les résultats de l'analyse pour chaque texte et des visualisations.
     """
@@ -54,7 +57,7 @@ def analyze_sentiment_batch(request: BatchSentimentRequest, db: Session = Depend
     sentiment_results = []
     
     for text in request.texts:
-        sentiment_result = sentiment_analyzer.analyze_sentiment(text)
+        sentiment_result = sentiment_analyzer.analyze_sentiment(text, use_openai=use_openai)
         
         # Enregistrer le texte dans la base de données
         text_data = TextDataRepository.create(db, TextDataCreate(text=text))
@@ -64,7 +67,8 @@ def analyze_sentiment_batch(request: BatchSentimentRequest, db: Session = Depend
             text=text,
             polarity=sentiment_result["polarity"],
             subjectivity=sentiment_result["subjectivity"],
-            sentiment=sentiment_result["sentiment"]
+            sentiment=sentiment_result["sentiment"],
+            model=sentiment_result.get("model", "local")
         )
         
         sentiment_results.append(result)

@@ -9,10 +9,15 @@ class Config:
     # Configuration générale
     PROJECT_NAME = "Analyse de Sentiments API"
     VERSION = "1.0.0"
-    DESCRIPTION = "API d'analyse de sentiments utilisant TextBlob et NLTK"
+    DESCRIPTION = "API d'analyse de sentiments utilisant TextBlob, NLTK et OpenAI"
     
     # Configuration de la base de données
     DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sentiment_analysis.db")
+    
+    # Configuration de l'API OpenAI
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    USE_OPENAI = os.getenv("USE_OPENAI", "false").lower() == "true"
     
     # Configuration de l'API
     API_PREFIX = "/api"

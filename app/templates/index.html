@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse de Sentiments - API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 1rem;
+        }
+        .card {
+            margin-bottom: 2rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .api-section {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.25rem;
+            background-color: #fff;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+        .footer {
+            margin-top: 2rem;
+            padding: 1rem 0;
+            border-top: 1px solid #e5e5e5;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header text-center">
+            <h1>API d'Analyse de Sentiments</h1>
+            <p class="lead">Analyse les sentiments dans les textes en utilisant TextBlob et NLTK</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Analyse en Temps Réel</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="sentiment-form">
+                            <div class="mb-3">
+                                <label for="text-input" class="form-label">Texte à analyser :</label>
+                                <textarea class="form-control" id="text-input" rows="5" placeholder="Entrez votre texte ici..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Analyser</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card" id="result-card" style="display: none;">
+                    <div class="card-header">
+                        <h3>Résultats</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="result-container">
+                            <!-- Les résultats seront affichés ici -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Documentation de l'API</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="api-section">
+                            <h4>Analyse de Sentiment Simple</h4>
+                            <p>Endpoint: <code>/api/analyze</code></p>
+                            <p>Méthode: <code>POST</code></p>
+                            <p>Exemple de requête:</p>
+                            <pre>{
+  "text": "Je suis très content de cette application !"
+}</pre>
+                        </div>
+                        
+                        <div class="api-section">
+                            <h4>Analyse de Sentiment par Lot</h4>
+                            <p>Endpoint: <code>/api/analyze/batch</code></p>
+                            <p>Méthode: <code>POST</code></p>
+                            <p>Exemple de requête:</p>
+                            <pre>{
+  "texts": [
+    "Je suis très content de cette application !",
+    "Ce service ne fonctionne pas correctement.",
+    "Je ne sais pas quoi penser de ce produit."
+  ]
+}</pre>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="/docs" class="btn btn-secondary" target="_blank">Documentation Swagger</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 NGOUNOU Victor Perez - API d'Analyse de Sentiments</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sentimentForm = document.getElementById('sentiment-form');
+            const textInput = document.getElementById('text-input');
+            const resultCard = document.getElementById('result-card');
+            const resultContainer = document.getElementById('result-container');
+
+            sentimentForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const text = textInput.value.trim();
+                if (!text) {
+                    alert('Veuillez entrer un texte à analyser.');
+                    return;
+                }
+                
+                try {
+                    // Afficher un indicateur de chargement
+                    resultContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>Analyse en cours...</p></div>';
+                    resultCard.style.display = 'block';
+                    
+                    // Envoyer la requête à l'API
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: text })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de l\'analyse');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Déterminer la classe de couleur pour le sentiment
+                    let sentimentClass = 'text-primary';
+                    if (data.sentiment === 'positif') {
+                        sentimentClass = 'text-success';
+                    } else if (data.sentiment === 'négatif') {
+                        sentimentClass = 'text-danger';
+                    }
+                    
+                    // Afficher les résultats
+                    resultContainer.innerHTML = `
+                        <div class="mb-3">
+                            <h5>Sentiment : <span class="${sentimentClass}">${data.sentiment}</span></h5>
+                        </div>
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <p class="mb-1">Polarité :</p>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: ${(data.polarity + 1) * 50}%;" 
+                                             aria-valuenow="${data.polarity}" aria-valuemin="-1" aria-valuemax="1">
+                                            ${data.polarity.toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="row">
+                                <div class="col">
+                                    <p class="mb-1">Subjectivité :</p>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: ${data.subjectivity * 100}%;" 
+                                             aria-valuenow="${data.subjectivity}" aria-valuemin="0" aria-valuemax="1">
+                                            ${data.subjectivity.toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    resultContainer.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            Erreur: ${error.message}
+                        </div>
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

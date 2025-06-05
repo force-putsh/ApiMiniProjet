@@ -8,7 +8,7 @@ import os
 from app.api import sentiment_analysis
 from app.models.database import init_db
 from app.config import active_config
-from app.services.sentiment_analyzer_new import download_nltk_resources
+from app.services.sentiment_analyzer import download_nltk_resources
 
 # Initialiser l'application FastAPI
 app = FastAPI(

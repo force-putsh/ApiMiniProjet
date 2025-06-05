@@ -9,7 +9,7 @@ from app.models.schemas import (
     BatchSentimentRequest, BatchSentimentResponse
 )
 from app.services.repositories import TextDataRepository, SentimentAnalysisRepository
-from app.services.sentiment_analyzer_new import SentimentAnalyzer
+from app.services.sentiment_analyzer import SentimentAnalyzer
 
 router = APIRouter()
 sentiment_analyzer = SentimentAnalyzer()

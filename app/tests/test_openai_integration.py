@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from app.services.sentiment_analyzer_new import SentimentAnalyzer
+from app.services.sentiment_analyzer import SentimentAnalyzer
 from app.config import Config
 
 class TestOpenAIIntegration(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestOpenAIIntegration(unittest.TestCase):
         # Vérifier que le sentiment est correctement détecté
         self.assertEqual(result['sentiment'], 'positif')
         
-    @patch('app.services.sentiment_analyzer_new.OpenAI')
+    @patch('app.services.sentiment_analyzer.OpenAI')
     def test_openai_sentiment_analysis(self, mock_openai):
         """Test de l'analyse de sentiment via OpenAI avec mock"""
         # Configuration du mock
